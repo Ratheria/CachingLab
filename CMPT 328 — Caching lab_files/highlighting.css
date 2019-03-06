@@ -1,0 +1,21 @@
+code .keyword {
+    font-weight: bold;
+    color: #e88;
+}
+
+code .type {
+    font-weight: bold;
+    color: #e88;
+}
+
+code .number {
+    color: #88e;
+}
+
+code .string {
+    color: #8e8;
+}
+
+code .line-comment, code .block-comment {
+    color: #ee8;
+}

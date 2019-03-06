@@ -1,0 +1,502 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <title>CMPT 328 — Caching lab</title>
+        <link rel="stylesheet" href="CMPT%20328%20%E2%80%94%20Caching%20lab_files/course.css">
+        <link rel="stylesheet" href="CMPT%20328%20%E2%80%94%20Caching%20lab_files/highlighting.css">
+        <link rel="stylesheet" href="CMPT%20328%20%E2%80%94%20Caching%20lab_files/mathquill.css">
+        <script src="CMPT%20328%20%E2%80%94%20Caching%20lab_files/jquery.js"></script>
+        <script src="CMPT%20328%20%E2%80%94%20Caching%20lab_files/mathquill.js"></script>
+        
+        <style>
+            div.system-spec {
+                display: inline-block;
+                border: 3px solid #008;
+                border-radius: 8px;
+                background: #eef;
+                padding: 0.5ex 2ex 0.5ex 2ex;
+                size: 80%;
+                margin-left: 0.25in;
+                margin-bottom: 0.5in;
+            }
+            
+            .prompt {
+                background: #88c;
+                color: white;
+                border: 1px solid black;
+                border-radius: 4px;
+                padding: 3px;
+                font-weight: bold;
+            }
+            
+            .extra-credit {
+                background: #88c;
+                color: #ff8;
+                border: 2px double red;
+                border-radius: 4px;
+                padding: 3px;
+                font-weight: bold;
+            }                
+            
+            .steps li {
+                margin-bottom: 1ex;
+            }
+            
+            h3 {
+                margin-top: 1in;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>Caching lab</h1>
+        <h2>CMPT 328 — Spring 2019</h2>
+        <hr>
+        
+        <h3>Getting started</h3>
+        <p>
+            Please find one other person to work with on this lab. (I 
+recommend that you choose a partner so that at least one of you has done
+ Java programming fairly recently.) If you are the odd one out, Kathy 
+will put you in a group. The lab consists of a series of experiments; 
+although there isn't a great deal of coding in this lab, when it is 
+required, please practice pair programming. Create a Google Doc to hold 
+your answers; put both your names in it and make sure it is shared with 
+both of you. Any questions that appear <span class="prompt">like this</span> are to be answered in this document. <span class="extra-credit">Questions like these</span> are opportunities to go deeper; they are optional and worth a little extra credit.
+        </p>
+        
+        <p>
+            During this lab you will be working with a set of Java 
+classes Kathy has made to model a multilevel cache system. This will 
+allow you to experiment with different cache configurations and see how 
+they affect programs using them without complex calculations (such as on
+ the homework!). You will need the Java Development Kit version 8 or 
+higher and whatever tools you prefer for writing and compiling Java 
+code. Whatever method you are using to compile your code, you will need 
+to make sure the jar file is added to your classpath (see Kathy for help
+ if you don't know how to do this).
+        </p>
+        
+        <p>
+            Begin by downloading the code from <a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/caches.jar">here</a>. You should take a few minutes with your partner and check out the <a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc">documentation</a> for the caching library. In particular, the classes you will be using most include
+        </p>
+        <ul>
+            <li><a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc/edu/westminstercollege/cmpt328/memory/MainMemory.html">MainMemory</a> — represents the main memory (RAM) of the computer</li>
+            <li><a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc/edu/westminstercollege/cmpt328/memory/Cache.html">Cache</a> — a single level of cache in the CPU</li>
+            <li><a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc/edu/westminstercollege/cmpt328/memory/MemorySystem.html">MemorySystem</a> — the memory system as seen by the program (can allocate memory for numbers, arrays, and so on)</li>
+            <li><a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc/edu/westminstercollege/cmpt328/memory/IntValue.html">IntValue</a>, <a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc/edu/westminstercollege/cmpt328/memory/DoubleValue.html">DoubleValue</a>, <a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc/edu/westminstercollege/cmpt328/memory/IntArrayValue.html">IntArrayValue</a>, and <a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc/edu/westminstercollege/cmpt328/memory/DoubleArrayValue.html">DoubleArrayValue</a> — different sorts of values that can be stored in a memory</li>
+            <li><a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/doc/edu/westminstercollege/cmpt328/memory/ReplacementAlgorithm.html">ReplacementAlgorithm</a> — methods of deciding which line to replace in a cache when it is full and a cache miss occurs</li>
+        </ul>
+        
+        <h3>Experiment 0: Using the memory library</h3>
+        <p>
+            Just to make sure everything is correctly set up, let's 
+setup a simple memory system and make sure that we can compile it. Make 
+an <code>Experiment0.java</code> file and paste the following code:
+        </p>
+        <pre class="indented"><code class="highlight" data-language="java"><span class="keyword">import</span> edu.westminstercollege.cmpt<span class="number">328</span>.memory.*;
+
+<span class="keyword">public</span> <span class="keyword">class</span> Experiment<span class="number">0</span> {
+
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(String... args) {
+        <span class="line-comment">// Make a simple two-level memory system<br></span>
+        <span class="line-comment">// Due to the structure of the code we always start at the bottom (RAM)<br></span>        MainMemory ram = <span class="keyword">new</span> MainMemory(
+                <span class="string">"RAM"</span>,      <span class="line-comment">// name of memory<br></span>                <span class="number">200</span>     <span class="line-comment">// access time in cycles<br></span>        );
+
+        <span class="line-comment">// Make a cache to sit on top of the RAM<br></span>        <span class="line-comment">// Since there are so many parameters to specify, the Cache class uses the "builder" pattern for construction<br></span>        Cache cache = Cache.builder()
+                .name(<span class="string">"Cache"</span>)      <span class="line-comment">// name of cache<br></span>                .drawingFrom(ram)   <span class="line-comment">// what memory it pulls from<br></span>                .lineCount(<span class="number">8</span>)       <span class="line-comment">// how many lines (of 64 bytes)<br></span>                .accessTime(<span class="number">20</span>)     <span class="line-comment">// access time in cycles<br></span>                .directMapping()    <span class="line-comment">// use direct mapping<br></span>                .build();           <span class="line-comment">// build the cache as configured<br></span>
+        <span class="line-comment">// Create a memory system to help us access these memories<br></span>        MemorySystem sys = <span class="keyword">new</span> MemorySystem(cache); <span class="line-comment">// provide the highest-level memory (closest to CPU)<br></span>
+        <span class="line-comment">// Print out the cache in its current (vacant state)<br></span>        System.out.println(<span class="string">"Cache before any accesses:"</span>);
+        cache.print();
+        System.out.println(<span class="string">"\n"</span>);
+
+        <span class="line-comment">// Make some memory accesses (use the MemorySystem to do this)<br></span>        IntValue a = sys.allocateInt();
+        a.set(<span class="number">0</span>xbeaded);
+        System.out.printf(<span class="string">"a = %d\n"</span>, a.get());  <span class="line-comment">// prints 12,496,365 (base 10 version of 0xbeaded)<br></span>
+        DoubleValue x = sys.allocateDouble();
+        x.set(Math.PI);
+        x.set(x.get() * x.get());
+        System.out.printf(<span class="string">"x = %f\n"</span>, x.get());  <span class="line-comment">// prints 9.869604 ≈ π²<br></span>
+        IntArrayValue numbers = sys.allocateIntArray(<span class="number">4</span>); <span class="line-comment">// array of 4 ints<br></span>        numbers.set(<span class="number">0</span>, <span class="number">10</span>);  <span class="line-comment">// assign values to the four elements<br></span>        numbers.set(<span class="number">1</span>, <span class="number">20</span>);
+        numbers.set(<span class="number">2</span>, <span class="number">30</span>);
+        numbers.set(<span class="number">3</span>, <span class="number">40</span>);
+        System.out.print(<span class="string">"numbers ="</span>);
+        <span class="line-comment">// How to write a for loop controlled by an IntValue<br></span>        IntValue i = sys.allocateInt();
+        <span class="keyword">for</span> (i.set(<span class="number">0</span>); i.get() &lt; numbers.getLength(); i.increment())  <span class="line-comment">// prints 10 20 30 40<br></span>            System.out.print(<span class="string">" "</span> + numbers.get(i));
+        System.out.println();
+
+        <span class="line-comment">// How many CPU cycles did we use on our fictional computer with these memory accesses?<br></span>        System.out.printf(<span class="string">"\n\nCycles used: %d\n"</span>, sys.getTotalAccessTime());
+
+        <span class="line-comment">// Print out the cache again<br></span>        System.out.println(<span class="string">"\nCache after these accesses:"</span>);
+        cache.print();
+
+        <span class="line-comment">// The MemorySystem can also print out a summary of accesses, hit ratios, and so on<br></span>        System.out.println(<span class="string">"\n"</span>);
+        System.out.println(<span class="string">"Memory system summary"</span>);
+        sys.printStatistics();
+    }
+}
+</code></pre>
+        <p>
+            Any use of value objects — IntValue, DoubleValue, 
+IntArrayValue, and so on — will be tracked by the memory system. The 
+cache or caches will behave as we have seen in class complete with cache
+ hits, misses, and the numbers of cycles needed for all this is 
+automatically tracked. If you use data types that aren't a part of this 
+library (such as <code class="highlight" data-language="java"><span class="type">int</span></code>) they will of course not be tracked by the system.
+        </p>
+
+        <p>
+            Compile and run this code. (If you get error message about 
+not finding symbols, then your classpath needs to be configured.) Look 
+over each bit of code and make sure you get the idea of how to use the 
+library before moving on.
+        </p>
+        
+        <h3>Experiment 1: direct versus associative mapping</h3>
+        <div class="system-spec">
+            <h4>Memory systems to configure</h4>
+            <h5>System A</h5>
+            <ul>
+                <li>RAM: access time 200 cycles</li>
+                <li>Cache: 256 lines, direct mapping, access time of 20 cycles</li>
+            </ul>
+            <h5>System B</h5>
+            <ul>
+                <li>RAM: as in System A</li>
+                <li>Cache: as in System A, but 25 cycles access time and make it two-way set associative (2 lines per set) with LRU replacement</li>
+            </ul>
+        </div>
+        <ol class="alpha steps">
+            <li>Make <code>Experiment1.java</code> and, in its main method, create two memory systems as specified in the box (refer to Experiment 0 for an example).</li>
+            <li>Using system A, create three int arrays <code>a</code>, <code>b</code>, and <code>c</code>, each of 6144 elements.</li>
+            <li>Write a for loop to copy the contents of <code>a</code> into <code>b</code>.
+ Make sure to use an IntValue, not a regular int, for the loop counter 
+so that accesses to it are also tracked by the system. (This array copy 
+doesn't actually do anything interesting because everything in memory is
+ 0 at this point but it will still track the number of cycles needed to 
+perform this operation.) <span class="prompt">How many cycles of memory access does this require?</span> (Use the appropriate method of MemorySystem to get this information.)
+            </li><li>Add the line <code class="highlighted" data-language="java"><span style="font-style: italic;">systemA</span>.resetMemories();</code>
+ after your array-copy loop. This will put the memory and cache back in 
+their initial states (zero and vacant) and roll back the access time 
+counters without disturbing the values that you already allocated. This 
+is important because in the next step you're going to....</li>
+            <li>...add code to copy the contents of <code>a</code> into <code>c</code>. <span class="prompt">How many cycles does this take?</span></li>
+            <li>You should have observed that the time to copy a→c is much more than a→b was. <span class="prompt">Why is that?</span> You may find it helpful to...
+                <ul>
+                    <li>print the cache or system statistics;</li>
+                    <li>get the memory addresses of <code>a</code>, <code>b</code>, and <code>c</code> (using the <code>getAddress()</code> method) and decompose them into tag, line number, and offset.</li>
+                </ul>
+            <strong>Do not move on until you're satisifed that you understand what is going on.</strong></li>
+            <li>Now repeat the same experiment (copying a→b, then a→c) 
+using system B instead. (The longer access time of the cache in system A
+ is intended to reflect the fact that associative caches are inherently 
+slower than ones that use direct mapping.) <span class="prompt">What do you observe?</span> Can you explain <span class="prompt">why the results are so different from system A?</span></li>
+            <li><span class="prompt">What is the name of the phenomenon that you observed with the cache when using direct mapping?</span></li>
+        </ol>
+        
+        <h3>Experiment 2: high associativity</h3>
+        <div class="system-spec">
+            <h4>Memory systems to configure</h4>
+            <h5>System A</h5>
+            <ul>
+                <li>RAM: 200 cycle access time</li>
+                <li>Cache: 256 lines, access time of 25 cycles, 2-way set associative (LRU)</li>
+            </ul>
+            <h5>System B</h5>
+            Same as System A but make the cache 8-way set-associative
+            <h5>System C</h5>
+            Same as Systems A and B but with fully-associative cache
+            
+            <p>In the real world, caches with a higher degree of 
+associativity will be physically larger and hence have a higher access 
+time. In this experiment we're disregarding that fact in order to 
+highlight to the maximum degree the extent to which higher-associativity
+ caches may perform better.</p>
+        </div>
+        <ol class="alpha steps">
+            <li>Create <code>Experiment2.java</code> and paste the following benchmark method.
+            <pre class="indented"><code class="highlight" data-language="java">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> benchmark(MemorySystem sys) {
+        Random random = <span class="keyword">new</span> Random();
+        IntArrayValue data = sys.allocateIntArray(<span class="number">100000</span>);
+        IntValue i = sys.allocateInt();
+        IntValue tmp = sys.allocateInt();
+        IntValue a = sys.allocateInt();
+        IntValue b = sys.allocateInt();
+
+        <span class="keyword">for</span> (i.set(<span class="number">0</span>); i.get() &lt; <span class="number">1000000</span>; i.increment()) {
+            a.set(random.nextInt(data.getLength()));
+            b.set(random.nextInt(data.getLength()));
+
+            tmp.set(data.get(a));
+            data.set(a, data.get(b));
+            data.set(b, tmp);
+        }
+
+        System.out.printf(<span class="string">"\nTotal access time: %,d\n"</span>, sys.getTotalAccessTime());
+        sys.printStatistics();
+    }</code></pre>
+            <p>This method creates an array of 100,000 ints, then chooses pairs of them to swap at random 1,000,000 times.</p>
+            </li>
+            <li>Run the benchmark method on each of the three systems for this experiment. <span class="prompt">What
+ do you observe about the relative performance of the caches with a 
+higher degree of associativity with this benchmark? What do you conclude
+ about the benefits of high-associativity caches, given that they are 
+more expensive and have a higher access time?</span> <br><br>
+            (Note: you may observe that running the simulation with the 
+fully-associative caches takes significantly longer than the 
+less-associative caches. This is simply because the fully-associative 
+cache takes much longer to simulate — it has 32 times as many lines to 
+check at any access as the 8-way cache! In the real world, while a 
+fully-associative cache does have a higher access time, it is much less 
+than a factor of 32 increase due to the magic of content-addressable 
+memory.)</li>
+            <li><span class="extra-credit">Do you think the results 
+might be different if we were to run a different sort of benchmark? 
+Devise and test some other sort of benchmark that does a substantially 
+better job of highlighting the difference between associativies. Would a
+ fully-associative cache be worthwhile?</span></li>
+        </ol>
+        
+        <h3>Experiment 3: multiple levels of cache</h3>
+        <div class="system-spec">
+            <h4>Memory systems to configure</h4>
+            <h5>Systems A, B, C, D, and E</h5>
+            (System A has RAM only; system B has RAM plus L4 cache; system C has RAM, L4 cache, and then L3 cache; and so on)
+            <ul>
+                <li>RAM: access time of 200 cycles</li>
+                <li>L4 cache: 1024 lines, 64 cycle access time, 4-way set associative (LRU)</li>
+                <li>L3 cache: one quarter the size of L4, half the access time, also 4-way set associative</li>
+                <li>L2 cache: one quarter the size of L3, half the access time</li>
+                <li>L1 cache: one quarter the size of L2, half the access time</li>
+            </ul>
+        </div>
+        <ol class="steps alpha">
+            <li>Here is a simple class that sorts an array (using the quicksort algorithm) stored in a memory system:
+            <pre class="indented"><code class="highlight" data-language="java"><span class="keyword">import</span> edu.westminstercollege.cmpt<span class="number">328</span>.memory.*;
+
+<span class="keyword">import</span> java.util.Random;
+
+<span class="keyword">public</span> <span class="keyword">class</span> Quicksort {
+
+    <span class="keyword">private</span> <span class="keyword">final</span> MemorySystem sys;
+    <span class="keyword">private</span> <span class="keyword">final</span> DoubleValue tmp;
+    <span class="keyword">private</span> <span class="keyword">final</span> Random random = <span class="keyword">new</span> Random();
+
+    <span class="keyword">public</span> Quicksort(MemorySystem sys) {
+        <span class="keyword">this</span>.sys = sys;
+        <span class="keyword">this</span>.tmp = sys.allocateDouble();
+    }
+
+    <span class="keyword">public</span> <span class="keyword">void</span> sort(DoubleArrayValue data) {
+        sort(data, <span class="number">0</span>, data.getLength());
+    }
+
+    <span class="keyword">public</span> <span class="keyword">void</span> sort(DoubleArrayValue data, <span class="type">int</span> a, <span class="type">int</span> b) {
+        <span class="type">int</span> n = b - a;
+        <span class="keyword">if</span> (n &lt; <span class="number">2</span>)
+            <span class="keyword">return</span>;
+
+        IntValue piv = sys.allocateInt(a + random.nextInt(n));
+        IntValue i = sys.allocateInt(a);
+        swap(data, piv.get(), i.get());
+        piv.set(a);
+
+        <span class="keyword">for</span> (i.set(a + <span class="number">1</span>); i.get() &lt; b; i.increment()) {
+            <span class="keyword">if</span> (data.get(i) &lt; data.get(piv)) {
+                swap(data, i.get(), piv.get() + <span class="number">1</span>);
+                swap(data, piv.get(), piv.get() + <span class="number">1</span>);
+                piv.increment();
+            }
+        }
+
+        sort(data, a, piv.get());
+        sort(data, piv.get() + <span class="number">1</span>, b);
+    }
+
+    <span class="keyword">private</span> <span class="keyword">void</span> swap(DoubleArrayValue array, <span class="type">int</span> a, <span class="type">int</span> b) {
+        tmp.set(array.get(a));
+        array.set(a, array.get(b));
+        array.set(b, tmp);
+    }
+}</code></pre>
+                <p>Paste this into Quicksort.java.</p>
+                </li>
+                <li>Now, in Experiment3.java, write some code that fills
+ an array of doubles (try 20,000 elements as a good beginning) with 
+random values and sorts it using the Quicksort class.</li>
+                <li>Run the sort and count the total access time with 
+each of the five systems (making sure to reset in between). (Also make 
+sure that the array is filled with values before each sort — quicksort 
+behaves very badly on an array of zeros!)</li>
+                <li><span class="prompt">What do you observe about the performance of quicksort as you add more levels of cache? Is it worthwhile to add more levels?</span></li>
+                <li><span class="prompt">Why do you think CPU designers don't just build a dozen, a hundred, a million levels of cache into their CPUs?</span></li>            
+        </ol>
+        
+        <h3>Experiment 4: two-dimensional arrays</h3>
+        <div class="system-spec">
+            <h4>Memory systems to configure</h4>
+            Just use a prebuilt <code>MemorySystem.CoreI7</code> in this experiment.
+        </div>
+        <ol class="steps">
+            <li>Copy the <a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/Image.java.txt">Image.java</a> and <a href="http://people.westminstercollege.edu/faculty/klenth/2019spring/cmpt328/lab/caching/Pixel.java.txt">Pixel.java</a> files into your directory (make sure their filenames don't end in .txt).</li>
+            <li>Also make an Experiment4.java. Get an image of your choice in JPG, PNG, GIF, or BMP format — not <em>too</em> large (the simulated system memory is only 16 MiB) but big enough to be fun.</li>
+            <li>Examine the Image class. It stores all the pixels of the
+ image into a single IntArrayValue. The very first pixel in the array 
+corresponds to the top-left pixel (coordinates (0, 0)); <span class="prompt">which pixel is the <em>second</em> one in the array — one to the right of the top-left, or one below the top-left?</span> (Look at the <code>index</code> method to figure this out.)</li>
+            <li>In your Experiment4 main method, write code that loads 
+your image, then makes every pixel grayscale (set the red, green, and 
+blue to the average <span style="font-size: 80%;">(arithmetic mean ;-))</span> of the three) and saves the image to a different file. Your code to do this will involve a nested loop.</li>
+            <li>Run your program and keep track of the total access time. Then do it again but <em>switch the order of the loops</em> (if you had x inside of y before, now put y inside of x). <span class="prompt">What do you observe about the access times? Can you explain why this happens? (Refer back to your answer to (c)!)</span></li>
+            <li><span class="prompt">What does this experiment teach you about the right way to iterate over a two-dimensional array?</span></li>
+        </ol>
+        
+        <x-toolbox class="open" id="base-toolbox" data-title="Handy base converter"><x-title>Handy base converter</x-title>
+            <div class="content">
+                <span style="font-size: 80%;">(Not that you'll need it....)</span>
+                <style>
+                    #base-toolbox input {
+                        text-align: center;
+                        border: 1px solid #88c;
+                    }
+                </style>
+                <table>
+                    <tbody><tr>
+                        <td style="text-align: right; padding-right: 2ex; font-size: 80%;">Decimal:</td>
+                        <td><input type="text" data-base="10" pattern="(,|[0-9])*" value="0" size="30"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right; padding-right: 2ex; font-size: 80%;">Hexadecimal:</td>
+                        <td><input type="text" data-base="16" pattern=" *(0[xX])?[ 0-9a-fA-F]*" value="0" size="30"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right; padding-right: 2ex; font-size: 80%;">Binary:</td>
+                        <td><input type="text" data-base="2" pattern="[ 01]*" value="0" size="30"></td>
+                    </tr>
+                </tbody></table>
+            </div>
+        </x-toolbox>
+        
+        <script>
+            "use strict";
+            (function () {
+                var MQ = MathQuill.getInterface(2);
+                var math_elems = document.querySelectorAll(".math");
+                for (var i = 0; i < math_elems.length; ++i) {
+                    MQ.StaticMath(math_elems[i]);
+                }
+            })();
+            
+            (function() {
+                var sum_points_elems = document.querySelectorAll("x-points[sum]");
+                console.log(sum_points_elems.length + " x-points sums");
+                for (var i = 0; i < sum_points_elems.length; ++i) {
+                    var sum_points_elem = sum_points_elems[i];
+                    var li_parent = sum_points_elem;
+                    while (li_parent !== undefined && li_parent.nodeName !== "LI")
+                        li_parent = li_parent.parentElement;
+                    var child_points_elems = li_parent.querySelectorAll("x-points");
+                    console.log("x-points sum #" + i + " has " + child_points_elems.length + " children");
+                    
+                    var total_points = 0;
+                    for (var j = 0; j < child_points_elems.length; ++j) {
+                        var child_points_elem = child_points_elems[j];
+                        if (child_points_elem === sum_points_elem)
+                            continue;
+                        else
+                            total_points += parseInt(child_points_elem.innerHTML);
+                    }
+                    
+                    sum_points_elem.innerHTML = "" + total_points;
+                }
+            })();
+            
+            (function() {
+                var baseBoxes = document.querySelectorAll("#base-toolbox input[data-base]");
+                for (var i = 0; i < baseBoxes.length; ++i) {
+                    baseBoxes[i].addEventListener("input", function(e) {
+                        handleBaseBox(e.target);
+                    });
+                }
+                
+                function handleBaseBox(box) {
+                    var regex = new RegExp("^" + box.getAttribute("pattern") + "$");
+                    var base = parseInt(box.dataset.base) || 10;
+                    
+                    // Is the input valid?
+                    var input = box.value;
+                    if (regex.test(input)) {
+                        var value = parseNumber(input, base);
+                        for (var i = 0; i < baseBoxes.length; ++i) {
+                            if (baseBoxes[i] !== box) {
+                                var outBox = baseBoxes[i];
+                                var boxBase = parseInt(outBox.dataset.base) || 10;
+                                var convertedNumber = numberToBase(value, boxBase);
+                                outBox.value = convertedNumber;
+                            }
+                        }
+                    } else {
+                        // Invalid input - clear all the boxes
+                        for (var i = 0; i < baseBoxes.length; ++i) {
+                            if (baseBoxes[i] !== box)
+                                baseBoxes[i].value = "";
+                        }
+                    }
+                }
+                
+                function digitValue(digit, base) {
+                    var value;
+                    if ("0" <= digit && digit <= "9")
+                        value = parseInt(digit);
+                    else if ("a" <= digit && digit <= "z")
+                        value = digit.charCodeAt(0) - "a".charCodeAt(0) + 10;
+                    return (value >= 0 && value < base) ? value : undefined;
+                }
+                
+                function digitString(digit) {
+                    if (digit < 10)
+                        return String.fromCharCode("0".charCodeAt(0) + digit);
+                    else
+                        return String.fromCharCode("a".charCodeAt(0) + (digit - 10));
+                }
+                
+                function parseNumber(text, base) {
+                    text = text.toLowerCase();
+                    var value = 0;
+                    for (var i = 0; i < text.length; ++i) {
+                        var dv = digitValue(text.charAt(i), base);
+                        if (dv !== undefined)
+                            value = value * base + dv;
+                    }
+                    
+                    return value;
+                }
+                
+                function numberToBase(value, base) {
+                    if (value === 0)
+                        return "0";
+                    var grouping = (base == 10) ? 3 : 4;
+                    var separator = (base == 10) ? "," : " ";
+                    
+                    var originalValue = value;
+                    var output = "";
+                    var digits = 0;
+                    while (value !== 0) {
+                        var dig = value % base;
+                        value = Math.trunc(value / base);
+                        output = digitString(dig) + output;
+                        ++digits;
+                        if ((base == 10 && digits % grouping == 0 && value != 0 && originalValue >= 10000)
+                                || (base != 10 && digits % grouping == 0 && value != 0))
+                            output = separator + output;
+                    }
+                    
+                    return output;
+                }
+            })();
+        </script>
+        
+        <script src="CMPT%20328%20%E2%80%94%20Caching%20lab_files/highlighting.js"></script>
+        <script src="CMPT%20328%20%E2%80%94%20Caching%20lab_files/toolbox.js"></script>
+    
+
+
+</body></html>

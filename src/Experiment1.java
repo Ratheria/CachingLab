@@ -27,7 +27,7 @@ public class Experiment1
 	            .build();           // build the cache as configured
 		
 	    MemorySystem systemA = new MemorySystem(cacheA); // provide the highest-level memory (closest to CPU)
-	    MemorySystem systemB = new MemorySystem(cacheB); // provide the highest-level memory (closest to CPU)
+	    MemorySystem systemB = new MemorySystem(cacheB); 
 	    
 	    IntArrayValue intArray1 = systemB.allocateIntArray(6144);
 	    IntArrayValue intArray2 = systemB.allocateIntArray(6144);
